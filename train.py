@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn 
 from torch.utils.data import Dataset, DataLoader
 from model import NeuralNet, AdvancedNeuralNet
+from transformers import AutoModel, BertTokenizerFast
+from torchinfo import summary
 from nltk_utils import tokenize, stem, bag_of_words
 with open('intents.json', 'r') as f:
     intents = json.load(f)
@@ -11,6 +13,9 @@ with open('intents.json', 'r') as f:
 all_words = []
 tags = []
 xy = []
+
+# Load the BERT tokenizer
+tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
 
 for intent in intents['intents']:
     tag = intent['tag']
@@ -101,7 +106,14 @@ train_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
 
 #The below function helps push to GPU for training if available
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = AdvancedNeuralNet(input_size, hidden_size, output_size).to(device)
+# model = NeuralNet(input_size, hidden_size, output_size).to(device)
+# Import BERT-base pretrained model
+bert = AutoModel.from_pretrained('bert-base-uncased')
+# freeze all the parameters. This will prevent updating of model weights during fine-tuning.
+for param in bert.parameters():
+    param.requires_grad = False
+model = AdvancedNeuralNet(bert).to(device)
+summary(model)
 
 #Loss and Optimizer
 

@@ -70,7 +70,7 @@ familiar with all of the words in the dataset and their frequencies. TF-IDF is i
 for finding words relevant to each document and ignoring "filler" words like "the", "a", 
 "of", etc. Word2Vec is a great system for identifying words with similar semantic meaning. 
 Thus, TF-IDF and Word2Vec, although typically better-performing than Bag of Words, are not 
-required for the purposes of this project.
+required for the purposes of this project, as the training data is quite limited anyway.
 """
 
 

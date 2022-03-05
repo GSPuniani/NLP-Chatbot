@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn 
 from torch.utils.data import Dataset, DataLoader
-from model import NeuralNet
+from model import NeuralNet, AdvancedNeuralNet
 from nltk_utils import tokenize, stem, bag_of_words
 with open('intents.json', 'r') as f:
     intents = json.load(f)
@@ -101,7 +101,7 @@ train_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
 
 #The below function helps push to GPU for training if available
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = NeuralNet(input_size, hidden_size, output_size).to(device)
+model = AdvancedNeuralNet(input_size, hidden_size, output_size).to(device)
 
 #Loss and Optimizer
 

@@ -9,7 +9,11 @@
           "Howdy",
           "Is anyone there?",
           "Hello",
-          "Good day"
+          "Good day",
+          "Good morning",
+          "Good afternoon",
+          "Good evening",
+          "Yo"
         ],
         "responses": [
           "Hey :-)",
@@ -80,6 +84,45 @@
         "responses": [
           "Why did the hipster burn his mouth? He drank the coffee before it was cool.",
           "What did the buffalo say when his son left for college? Bison."
+        ]
+      },
+      {
+        "tag": "metafunctionality",
+        "patterns": [
+         "Who are you?",
+         "What do you do?",
+         "What is your purpose?",
+         "What is this?",
+         "Who am I talking to?",
+         "Are you human?",
+         "Are you a bot?"
+        ],
+        "responses": [
+          "I am a simple chatbot designed to answer commonly asked questions."
+        ]
+      },
+      {
+        "tag": "existential",
+        "patterns": [
+          "What is the meaning of life?",
+          "Why are we here?",
+          "Why does the universe exist?"
+        ],
+        "responses": [
+          "42",
+          "To find your own meaning or purpose."
+        ]
+      },
+      {
+        "tag": "human_assistance",
+        "patterns": [
+          "Could you please put me in touch with a human?",
+          "Human representative please.",
+          "I would like human assistance."
+        ],
+        "responses": [
+          "I'm sorry, Dave. I cannot do that.",
+          "Certainly! Redirecting to a human representative..."
         ]
       }
     ]

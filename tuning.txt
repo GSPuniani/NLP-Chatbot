@@ -1,0 +1,57 @@
+Each of the following hyperparameters were tuned independently of the rest.
+
+Tuned number of epochs from 1000 to 700:
+(Rationale: loss seemed to hit a minimum around 700 epochs on this first run before increasing again.)
+epoch 100/700, loss=0.2796
+epoch 200/700, loss=0.1174
+epoch 300/700, loss=0.4680
+epoch 400/700, loss=0.2267
+epoch 500/700, loss=0.1700
+epoch 600/700, loss=0.0031
+epoch 700/700, loss=0.0530
+final loss, loss=0.0530
+
+
+Tuned hidden size from 8 to 26:
+(Rationale: Hidden size could be any number between the input size and the output size, so a bigger number within this range might preserve more data in the forward feed.)
+epoch 100/1000, loss=0.0230
+epoch 200/1000, loss=0.0038
+epoch 300/1000, loss=0.0338
+epoch 400/1000, loss=0.0319
+epoch 500/1000, loss=0.0142
+epoch 600/1000, loss=0.0000
+epoch 700/1000, loss=0.0001
+epoch 800/1000, loss=0.0001
+epoch 900/1000, loss=0.2534
+epoch 1000/1000, loss=0.0000
+final loss, loss=0.0000
+
+
+Tuned batch size from 8 to 11:
+(Rationale: A slightly larger batch size could reduce inaccurate estimates for the error gradient.)
+epoch 100/1000, loss=0.8304
+epoch 200/1000, loss=0.0576
+epoch 300/1000, loss=0.0409
+epoch 400/1000, loss=0.0236
+epoch 500/1000, loss=0.0359
+epoch 600/1000, loss=0.0183
+epoch 700/1000, loss=0.4189
+epoch 800/1000, loss=0.3314
+epoch 900/1000, loss=0.0090
+epoch 1000/1000, loss=0.9533
+final loss, loss=0.9533
+
+
+Tuned max sequence length from 6 to 5:
+(Rationale: It seems that all patterns in intents.json have 5 words or less, so matching this value should reduce unnecessary padding.)
+epoch 100/1000, loss=0.3866
+epoch 200/1000, loss=0.4385
+epoch 300/1000, loss=0.0675
+epoch 400/1000, loss=0.1079
+epoch 500/1000, loss=0.0006
+epoch 600/1000, loss=0.0550
+epoch 700/1000, loss=0.3252
+epoch 800/1000, loss=0.0706
+epoch 900/1000, loss=0.0108
+epoch 1000/1000, loss=0.6338
+final loss, loss=0.6338

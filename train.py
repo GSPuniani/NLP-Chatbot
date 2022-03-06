@@ -19,6 +19,8 @@ all_words = []
 tags = []
 xy = []
 
+# Add flattened JSON data to an array to store in a dataframe
+rows = []
 for intent in intents['intents']:
     tag = intent['tag']
     tags.append(tag)
@@ -26,6 +28,25 @@ for intent in intents['intents']:
         w = tokenize(pattern)
         all_words.extend(w)
         xy.append((w, tag))
+        # Store each pattern with its tag
+        pattern = re.sub(r'[^a-zA-Z ]+', '', pattern)
+        rows.append([pattern, intent['tag']])
+
+intentsCSV = "intents.csv"
+# Write flattened JSON data to CSV file
+with open(intentsCSV, 'w') as csvfile:
+    csvwriter = csv.writer(csvfile)
+    csvwriter.writerow(['text', 'label'])
+    csvwriter.writerows(rows)
+
+# Convert CSV into dataframe
+df = pd.read_csv(intentsCSV)
+
+# Converting the labels into encodings
+le = LabelEncoder()
+df['label'] = le.fit_transform(df['label'])
+train_text, train_labels = df['text'], df['label']
+
 
 print(all_words)
 ignore_words = ['?', '!', '.', ',']
@@ -52,29 +73,6 @@ for (pattern_sentence, tag) in xy:
 X_train = np.array(X_train)
 y_train = np.array(y_train)
 
-# Covert json data to a dataframe
-rows = []
-for intent in intents['intents']:
-    # Flatten the patterns
-    for pattern in intent['patterns']:
-        pattern = re.sub(r'[^a-zA-Z ]+', '', pattern)
-        rows.append([pattern, intent['tag']])
-
-filename = "intents.csv"
-# writing to csv file
-with open(filename, 'w') as csvfile:
-    # creating a csv writer object
-    csvwriter = csv.writer(csvfile)
-    csvwriter.writerow(['text', 'label'])
-    csvwriter.writerows(rows)
-
-df = pd.read_csv(filename)
-
-# Converting the labels into encodings
-le = LabelEncoder()
-df['label'] = le.fit_transform(df['label'])
-train_text, train_labels = df['text'], df['label']
-
 # Import BERT-base pretrained model
 bert = AutoModel.from_pretrained('bert-base-uncased')
 # Load the BERT tokenizer
@@ -84,6 +82,7 @@ tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
 tokens_train = tokenizer(
     train_text.tolist(),
     max_length=6,
+    # Hyperparameter tuning #4: max_length=5,
     pad_to_max_length=True,
     truncation=True,
     return_token_type_ids=False
@@ -134,10 +133,13 @@ training data. Higher learning rates generally require fewer epochs, while lower
 learning rates typically require more epochs. 
 """
 batch_size = 8
+# Hyperparameter tuning #3: batch_size = 11
 hidden_size = 8
+# Hyperparameter tuning #2: hidden_size = 26
 output_size = len(tags)
 learning_rate = 0.001
 num_epochs = 1000
+# Hyperparameter tuning #1: num_epochs = 700
 
 
 input_size = len(X_train[0])
@@ -188,10 +190,6 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 for epoch in range(num_epochs):
     for step, batch in enumerate(train_loader):
-        # progress update after every 50 batches.
-        if step % 50 == 0 and not step == 0:
-            print('  Batch {:>5,}  of  {:>5,}.'.format(
-                step, len(train_loader)))
         # push the batch to gpu
         batch = [r.to(device) for r in batch]
         sent_id, mask, labels = batch
@@ -213,7 +211,7 @@ for epoch in range(num_epochs):
 
 print(f'final loss, loss={loss.item():.4f}')
 
-    #Need to save the data 
+#Need to save the data 
 data = {
     "model_state": model.state_dict(),
     "input_size": input_size,

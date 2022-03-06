@@ -3,8 +3,9 @@ import numpy as np
 import torch
 import torch.nn as nn 
 from torch.utils.data import Dataset, DataLoader
-from model import NeuralNet, AdvancedNeuralNet
-from transformers import AutoModel, BertTokenizerFast
+# The Advanced NN model is composed of the following classes: Encoder, Attention, OneStepDecoder, Decoder, and EncodeDecoder
+from model import NeuralNet, Encoder, Attention, OneStepDecoder, Decoder, EncodeDecoder
+# from transformers import AutoModel, BertTokenizerFast
 from torchinfo import summary
 from nltk_utils import tokenize, stem, bag_of_words
 with open('intents.json', 'r') as f:
@@ -15,7 +16,7 @@ tags = []
 xy = []
 
 # Load the BERT tokenizer
-tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
+# tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
 
 for intent in intents['intents']:
     tag = intent['tag']
@@ -95,6 +96,11 @@ output_size = len(tags)
 learning_rate = 0.001
 num_epochs = 1000
 
+# AdvancedNeuralNet hyperparameters
+embedding_dim = 256
+hidden_dim = 1024
+dropout = 0.5
+
 input_size = len(X_train[0])
 print("Below is the Input Size of our Neural Network")
 print(input_size, len(all_words))
@@ -108,11 +114,18 @@ train_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # model = NeuralNet(input_size, hidden_size, output_size).to(device)
 # Import BERT-base pretrained model
-bert = AutoModel.from_pretrained('bert-base-uncased')
+# bert = AutoModel.from_pretrained('bert-base-uncased')
 # freeze all the parameters. This will prevent updating of model weights during fine-tuning.
-for param in bert.parameters():
-    param.requires_grad = False
-model = AdvancedNeuralNet(bert).to(device)
+# for param in bert.parameters():
+#     param.requires_grad = False
+
+# Instantiate the models
+attention_model = Attention(hidden_dim, hidden_dim)
+encoder = Encoder(input_size, embedding_dim, hidden_dim)
+one_step_decoder = OneStepDecoder(output_size, embedding_dim, hidden_dim, hidden_dim, attention_model)
+decoder = Decoder(one_step_decoder, device)
+
+model = EncodeDecoder(encoder, decoder).to(device)
 summary(model)
 
 #Loss and Optimizer
@@ -143,7 +156,8 @@ for epoch in range(num_epochs):
         labels = labels.to(device)
 
         #Forward pass
-        outputs = model(words)
+        #outputs = model(words)
+        outputs = model(words.long(), labels)
         loss = criterion(outputs, labels)
 
         #backward and optimizer step 

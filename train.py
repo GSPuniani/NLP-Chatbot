@@ -1,22 +1,23 @@
 import json
 import numpy as np
+import pandas as pd
+import re
+import csv
 import torch
 import torch.nn as nn 
-from torch.utils.data import Dataset, DataLoader
-# The Advanced NN model is composed of the following classes: Encoder, Attention, OneStepDecoder, Decoder, and EncodeDecoder
-from model import NeuralNet, Encoder, Attention, OneStepDecoder, Decoder, EncodeDecoder
-# from transformers import AutoModel, BertTokenizerFast
+from torch.utils.data import TensorDataset, DataLoader, RandomSampler
+from model import NeuralNet, AdvancedNeuralNet
+from transformers import AutoModel, BertTokenizerFast
 from torchinfo import summary
 from nltk_utils import tokenize, stem, bag_of_words
+from sklearn.preprocessing import LabelEncoder
+
 with open('intents.json', 'r') as f:
     intents = json.load(f)
 
 all_words = []
 tags = []
 xy = []
-
-# Load the BERT tokenizer
-# tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
 
 for intent in intents['intents']:
     tag = intent['tag']
@@ -51,19 +52,61 @@ for (pattern_sentence, tag) in xy:
 X_train = np.array(X_train)
 y_train = np.array(y_train)
 
+# Covert json data to a dataframe
+rows = []
+for intent in intents['intents']:
+    # Flatten the patterns
+    for pattern in intent['patterns']:
+        pattern = re.sub(r'[^a-zA-Z ]+', '', pattern)
+        rows.append([pattern, intent['tag']])
 
-#Create a new Dataset
-class ChatDataset(Dataset):
-    def __init__(self):
-        self.n_samples = len(X_train)
-        self.x_data = X_train
-        self.y_data = y_train
+filename = "intents.csv"
+# writing to csv file
+with open(filename, 'w') as csvfile:
+    # creating a csv writer object
+    csvwriter = csv.writer(csvfile)
+    csvwriter.writerow(['text', 'label'])
+    csvwriter.writerows(rows)
 
-    def __getitem__(self, index):
-        return self.x_data[index], self.y_data[index]
+df = pd.read_csv(filename)
 
-    def __len__(self):
-        return self.n_samples
+# Converting the labels into encodings
+le = LabelEncoder()
+df['label'] = le.fit_transform(df['label'])
+train_text, train_labels = df['text'], df['label']
+
+# Import BERT-base pretrained model
+bert = AutoModel.from_pretrained('bert-base-uncased')
+# Load the BERT tokenizer
+tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
+
+# tokenize and encode sequences in the training set
+tokens_train = tokenizer(
+    train_text.tolist(),
+    max_length=6,
+    pad_to_max_length=True,
+    truncation=True,
+    return_token_type_ids=False
+)
+
+# for train set
+train_seq = torch.tensor(tokens_train['input_ids'])
+train_mask = torch.tensor(tokens_train['attention_mask'])
+train_y = torch.tensor(train_labels.tolist())
+
+
+# #Create a new Dataset
+# class ChatDataset(Dataset):
+#     def __init__(self):
+#         self.n_samples = len(X_train)
+#         self.x_data = X_train
+#         self.y_data = y_train
+
+#     def __getitem__(self, index):
+#         return self.x_data[index], self.y_data[index]
+
+#     def __len__(self):
+#         return self.n_samples
 
 #DONE: How do these hyperparameters affect optimization of our chatbot? 
 """
@@ -96,10 +139,6 @@ output_size = len(tags)
 learning_rate = 0.001
 num_epochs = 1000
 
-# AdvancedNeuralNet hyperparameters
-embedding_dim = 256
-hidden_dim = 1024
-dropout = 0.5
 
 input_size = len(X_train[0])
 print("Below is the Input Size of our Neural Network")
@@ -107,25 +146,22 @@ print(input_size, len(all_words))
 print("Below is the output size of our neural network, which should match the amount of tags ")
 print(output_size, tags)
 
-dataset = ChatDataset()
-train_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
-
+# wrap tensors
+train_data = TensorDataset(train_seq, train_mask, train_y)
+# sampler for sampling the data during training
+train_sampler = RandomSampler(train_data)
+# DataLoader for train set
+train_loader = DataLoader(
+    train_data, sampler=train_sampler, batch_size=batch_size)
 #The below function helps push to GPU for training if available
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # model = NeuralNet(input_size, hidden_size, output_size).to(device)
-# Import BERT-base pretrained model
-# bert = AutoModel.from_pretrained('bert-base-uncased')
+
 # freeze all the parameters. This will prevent updating of model weights during fine-tuning.
-# for param in bert.parameters():
-#     param.requires_grad = False
+for param in bert.parameters():
+    param.requires_grad = False
 
-# Instantiate the models
-attention_model = Attention(hidden_dim, hidden_dim)
-encoder = Encoder(input_size, embedding_dim, hidden_dim)
-one_step_decoder = OneStepDecoder(output_size, embedding_dim, hidden_dim, hidden_dim, attention_model)
-decoder = Decoder(one_step_decoder, device)
-
-model = EncodeDecoder(encoder, decoder).to(device)
+model = AdvancedNeuralNet(bert, input_size, hidden_size, output_size).to(device)
 summary(model)
 
 #Loss and Optimizer
@@ -151,13 +187,17 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 # optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
 for epoch in range(num_epochs):
-    for (words, labels) in train_loader:
-        words = words.to(device)
-        labels = labels.to(device)
+    for step, batch in enumerate(train_loader):
+        # progress update after every 50 batches.
+        if step % 50 == 0 and not step == 0:
+            print('  Batch {:>5,}  of  {:>5,}.'.format(
+                step, len(train_loader)))
+        # push the batch to gpu
+        batch = [r.to(device) for r in batch]
+        sent_id, mask, labels = batch
 
         #Forward pass
-        #outputs = model(words)
-        outputs = model(words.long(), labels)
+        outputs = model(sent_id, mask)
         loss = criterion(outputs, labels)
 
         #backward and optimizer step 

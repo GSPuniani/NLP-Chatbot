@@ -1,0 +1,8 @@
+We could integrate the chatbot into our own simple web app. If we deployed a Flask web app to Heroku, for example, 
+we could add in a Flask route that sends user input to the chatbot and then returns the output from the chatbot. Of course,
+this assumes that the chatbot can be imported and called into the Flask app. A similar process could be used to integrate 
+the chat bot into any web app (Django, Node.js, etc.) on any deployment service (AWS, GCP, etc.), although it would 
+probably require more steps. The process for deploying a chatbot to a Flask app on Heroku is detailed in this Medium 
+article: https://medium.com/@kumaramanjha2901/building-a-chatbot-in-python-using-chatterbot-and-deploying-it-on-web-7a66871e1d9b. 
+The chatbot would also require a front-end UI with HTML/CSS so that users can directly interact with it. Simple UI 
+designs could be found with a quick Google search and possibly in the documentation for the Bootstrap framework. 
